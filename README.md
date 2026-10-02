@@ -25,6 +25,28 @@ pnpm dev
 `main` 에 푸시하면 GitHub Actions 가 GitHub Pages 로 배포합니다. 프로젝트 페이지라
 빌드할 때 `--base=/brothermaze-web/` 가 붙습니다.
 
+### AWS 미리보기 배포
+
+CloudFront 미리보기 주소는 [보면소득](https://d1a6u3p5w26p51.cloudfront.net/)과
+[광고해요](https://d1a6u3p5w26p51.cloudfront.net/adhaeyo/)입니다. 정식 도메인과는
+별개이며, `main` 푸시로 자동 배포되는 GitHub Pages와도 별개입니다.
+
+AWS CLI에 계정 `399376050959` 접근 권한이 있는 프로필을 설정한 다음 실행합니다.
+
+```bash
+pnpm install --frozen-lockfile
+AWS_PROFILE=<profile> pnpm deploy:aws:preview --dry-run     # 변경 내용 미리 확인
+AWS_PROFILE=<profile> pnpm deploy:aws:preview                 # 실제 배포
+```
+
+스크립트는 AWS 계정·S3 버킷·CloudFront 배포를 확인하고 `/` 기준으로 빌드한 뒤
+S3에 업로드합니다. HTML은 재검증 캐시로, 기타 자산은 5분 캐시로 올리고 CloudFront
+캐시 무효화가 끝나면 두 주소의 응답을 확인합니다. 기존 S3 객체를 삭제하지 않으며,
+정식 도메인 DNS는 변경하지 않습니다. 정식 `www` 도메인용 화면 분기와
+OG·canonical URL은 코드에 반영되어 있지만, CloudFront 호스트별 라우팅·인증서·DNS
+연결은 아직 필요합니다. 자세한 대상 값은
+`scripts/deploy-aws-preview.sh`에 고정되어 있습니다.
+
 ## 구조
 
 | 경로 | 내용 |

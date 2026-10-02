@@ -79,6 +79,9 @@ function useReveal(site: Site) {
 }
 
 function readSite(): Site {
+  const hostname = window.location.hostname.toLowerCase()
+  if (hostname === "www.adhaeyo.com") return "adhaeyo"
+  if (hostname === "www.brothermaze.com") return "bomyeon"
   if (/\/adhaeyo\/?$/.test(window.location.pathname)) return "adhaeyo"
   /* 이전에 공유된 ?site=adhaeyo 링크도 계속 열리도록 */
   const q = new URLSearchParams(window.location.search).get("site")
@@ -86,6 +89,9 @@ function readSite(): Site {
 }
 
 function siteUrl(id: Site) {
+  if (["www.brothermaze.com", "www.adhaeyo.com"].includes(window.location.hostname.toLowerCase())) {
+    return siteMeta(id).canonicalUrl
+  }
   return BASE + siteMeta(id).path
 }
 
@@ -102,10 +108,18 @@ function useSite() {
     setMeta("name", "description", meta.description)
     setMeta("property", "og:title", meta.title)
     setMeta("property", "og:description", meta.description)
-    setCanonical(window.location.origin + siteUrl(site))
+    const ogImageUrl = new URL(meta.ogImage, meta.canonicalUrl).href
+    setMeta("property", "og:image", ogImageUrl)
+    setMeta("name", "twitter:image", ogImageUrl)
+    setCanonical(meta.canonicalUrl)
   }, [site])
   const go = useCallback((next: Site) => {
-    window.history.pushState(null, "", siteUrl(next))
+    const target = siteUrl(next)
+    if (target.startsWith("https://")) {
+      window.location.assign(target)
+      return
+    }
+    window.history.pushState(null, "", target)
     setSite(next)
     window.scrollTo({ top: 0 })
   }, [])

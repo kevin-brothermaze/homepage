@@ -65,7 +65,7 @@ function multiSiteHtml(): Plugin {
         /^([a-z]+:|\/\/|\/|#)/i.test(value) ? whole : ` ${attr}="${base}${value}"`,
     )
 
-  const rewrite = (html: string, meta: (typeof SITES)[number], base: string, urlBase: string) =>
+  const rewrite = (html: string, meta: (typeof SITES)[number], urlBase: string) =>
     absolutize(html, urlBase)
       .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeAttr(meta.title)}</title>`)
       .replace(
@@ -82,11 +82,15 @@ function multiSiteHtml(): Plugin {
       )
       .replace(
         /(<meta property="og:image" content=")[^"]*(")/,
-        `$1${escapeAttr(base + meta.ogImage)}$2`,
+        `$1${escapeAttr(new URL(meta.ogImage, meta.canonicalUrl).href)}$2`,
       )
       .replace(
         /(<meta name="twitter:image" content=")[^"]*(")/,
-        `$1${escapeAttr(base + meta.ogImage)}$2`,
+        `$1${escapeAttr(new URL(meta.ogImage, meta.canonicalUrl).href)}$2`,
+      )
+      .replace(
+        /(<link rel="canonical" href=")[^"]*(")/,
+        `$1${escapeAttr(meta.canonicalUrl)}$2`,
       )
 
   let outDir = 'dist'
@@ -119,13 +123,11 @@ function multiSiteHtml(): Plugin {
       const indexPath = path.join(outDir, 'index.html')
       if (!fs.existsSync(indexPath)) return
       const html = fs.readFileSync(indexPath, 'utf-8')
-      const origin = (html.match(/<meta property="og:image" content="([^"]*)"/)?.[1] ?? '')
-        .replace(/[^/]*$/, '')
       for (const meta of SITES) {
         if (!meta.path) continue
         const dir = path.join(outDir, meta.path)
         fs.mkdirSync(dir, { recursive: true })
-        fs.writeFileSync(path.join(dir, 'index.html'), rewrite(html, meta, origin, urlBase))
+        fs.writeFileSync(path.join(dir, 'index.html'), rewrite(html, meta, urlBase))
       }
     },
   }

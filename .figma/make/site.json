@@ -13,9 +13,9 @@
     "icon": "favicon.png"
   },
   "customScripts": {
-    "headStart": "<link rel=\"preconnect\" href=\"https://cdn.jsdelivr.net\" crossorigin>"
+    "headStart": "<link rel=\"preconnect\" href=\"https://cdn.jsdelivr.net\" crossorigin><link rel=\"canonical\" href=\"https://www.brothermaze.com/\">"
   },
   "openGraph": {
-    "image": "https://sooohaaan.github.io/brothermaze-web/og-image.png"
+    "image": "https://www.brothermaze.com/og-image.png"
   }
 }
