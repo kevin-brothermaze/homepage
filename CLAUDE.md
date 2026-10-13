@@ -38,37 +38,45 @@ pnpm build
 데스크톱·모바일 배치, 이미지, 링크, 제목을 확인하세요. `pnpm format`은 현재 oxfmt
 버전이 타입 선언 구분자를 손상시킬 수 있어 실행하지 않습니다(`README.md` 참조).
 
-## 배포 경계 (2026-10-02 기준)
+## 배포 경계 (2026-10-13 기준)
 
 1. **GitHub Pages**: `.github/workflows/deploy.yml`이 `main` 푸시 때 자동 배포합니다.
-   이 빌드는 프로젝트 하위 경로용 `--base=/brothermaze-web/`를 사용합니다.
-2. **AWS 미리보기**: 비공개 S3 버킷
+   이 빌드는 저장소 이름에 맞춘 프로젝트 하위 경로용 `--base=/<repository-name>/`를 사용합니다.
+2. **AWS 운영**: 비공개 S3 버킷
    `bmsd-homepage-static-399376050959` → CloudFront 배포
-   `E2S9WRKM37X22G` (`d1a6u3p5w26p51.cloudfront.net`). 보면소득은 `/`,
-   광고해요는 `/adhaeyo/`에서 확인합니다. CloudFront Function이 디렉터리 URL에
-   `index.html`을 붙여 S3 파일로 연결합니다. 기존 도메인 DNS에는 연결하지 않았습니다.
-3. **AWS 운영**: `www.brothermaze.com`과 `www.adhaeyo.com` 연결은 아직 구성되지
-   않았고 운영 배포 스크립트도 없습니다. 미리보기 배포를 운영 배포로 간주하지 마세요.
+   `E2S9WRKM37X22G` (`d1a6u3p5w26p51.cloudfront.net`)는
+   `https://www.brothermaze.com/`에 연결됐습니다. 광고해요는 별도 무료 배포
+   `E1YEZX4JAGDCV2` (`d1oyjttq7vlv4n.cloudfront.net`)를 사용하며
+   `https://www.adhaeyo.com/`에 연결됐습니다. 두 배포는 같은 S3 파일을 사용합니다.
+   무료 플랜에는 서로 다른 루트 도메인을 한 배포에 연결할 수 없어 분리했습니다.
+3. **기존 AWS 미리보기 주소**: 운영과 같은 버킷·파일을 사용하므로 이제 독립된
+   테스트 환경이 아닙니다. `deploy:aws:preview`는 업로드를 차단합니다.
 
-미리보기 수동 배포에는 `scripts/deploy-aws-preview.sh`를 사용합니다.
+운영 수동 배포에는 `scripts/deploy-aws-production.sh`를 사용합니다.
 
 ```bash
-AWS_PROFILE=<BMSD용_프로필> pnpm deploy:aws:preview --dry-run
-AWS_PROFILE=<BMSD용_프로필> pnpm deploy:aws:preview
+AWS_PROFILE=<BMSD용_프로필> pnpm deploy:aws:production --dry-run
+AWS_PROFILE=<BMSD용_프로필> pnpm deploy:aws:production
 ```
 
-스크립트는 AWS 계정·버킷·CloudFront ID를 검증하고 `/` 기준으로 빌드·업로드한 뒤,
-캐시 무효화와 두 공개 URL의 응답을 확인합니다. `--delete`를 사용하지 않습니다.
+스크립트는 AWS 계정·버킷·두 CloudFront ID·운영 별칭을 검증하고 `/` 기준으로
+빌드·업로드한 뒤, 두 배포의 캐시 무효화와 정식 URL의 제목·canonical을 확인합니다.
+`--delete`를 사용하지 않습니다.
 브라우저의 AWS 콘솔 로그인과 AWS CLI 자격 증명은 별개이므로, 실제 실행 전에
 BMSD 계정의 CLI 접근 권한을 확인해야 합니다.
 
-운영 연결 전 확인할 사항:
+CloudFront Function `bmsd-homepage-directory-index`의 LIVE 소스는
+`scripts/cloudfront-directory-index.js`로 보관합니다. 광고해요 호스트의 `/`를
+`/adhaeyo/index.html`로 연결하고 디렉터리 URL에는 `index.html`을 붙입니다.
+함수 파일을 변경해도 자동으로 AWS에 게시되지 않으므로 별도 저장·테스트·게시가 필요합니다.
 
-- 두 운영 도메인의 `/`에서 서로 다른 정적 HTML이 나와야 합니다. 앱의 호스트별
-  화면 분기와 각 HTML의 OG·canonical URL은 코드에 반영했지만, CloudFront의
-  호스트별 루트 URI 라우팅은 아직 구성되지 않았습니다.
-- 운영 도메인에 연결하기 전에 인증서·DNS와 두 HTML의 실제 응답을 점검하세요.
-- 운영용 인증서·CloudFront·DNS·운영 배포 대상은 미리보기와 구분해 검증하세요.
+`www.brothermaze.com`은 Cloudflare 프록시를 유지하며 SSL/TLS는 Full (strict)입니다.
+`brothermaze.com` → `www.brothermaze.com` 이동은 기존 Cloudflare Page Rules가 처리합니다.
+`www.adhaeyo.com`과 `adhaeyo.com`은 Route 53 A Alias로 같은 광고해요 배포에 연결됩니다.
+2026-10-13 아임웹의 `adhaeyo.com` 사이트 연결만 해제했고, 기존 사이트는
+`adhaeyo.imweb.me`를 대표 주소로 보존합니다. 루트는 LIVE 함수가 www 주소로 301 이동합니다.
+광고해요 배포는 루트가 포함된 ACM 인증서 `41c4bf1f-b33f-42da-a133-5c434ae7fa13`을 사용합니다.
+상세 설정·검증·롤백 값은 `docs/AWS_DOMAINS.md`를 참조하세요.
 
 ## 작업 원칙
 

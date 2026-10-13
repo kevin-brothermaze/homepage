@@ -3,7 +3,9 @@
 광고 보고 소득 받는 앱 **보면소득**(brothermaze.com)과 광고주용 **광고해요**(adhaeyo.com)
 랜딩 페이지입니다. 토스(toss.im) 서비스 페이지의 디자인 언어를 기준으로 만들었습니다.
 
-**미리보기** — https://sooohaaan.github.io/brothermaze-web/
+**운영** — [보면소득](https://www.brothermaze.com/) · [광고해요](https://www.adhaeyo.com/)
+
+**원본 저장소의 GitHub Pages 미리보기** — https://sooohaaan.github.io/brothermaze-web/
 
 | 화면 | 주소 |
 | --- | --- |
@@ -23,29 +25,33 @@ pnpm dev
 ```
 
 `main` 에 푸시하면 GitHub Actions 가 GitHub Pages 로 배포합니다. 프로젝트 페이지라
-빌드할 때 `--base=/brothermaze-web/` 가 붙습니다.
+빌드할 때 저장소 이름에 맞춰 `--base=/<repository-name>/` 가 붙습니다.
 
-### AWS 미리보기 배포
+### AWS 운영 배포
 
-CloudFront 미리보기 주소는 [보면소득](https://d1a6u3p5w26p51.cloudfront.net/)과
-[광고해요](https://d1a6u3p5w26p51.cloudfront.net/adhaeyo/)입니다. 정식 도메인과는
-별개이며, `main` 푸시로 자동 배포되는 GitHub Pages와도 별개입니다.
+2026-10-12에 두 `www` 도메인을 AWS로 연결했습니다. 각각 별도의 무료 CloudFront
+배포를 사용하며 같은 비공개 S3 버킷에서 파일을 읽습니다. 기존 CloudFront 미리보기
+주소도 운영과 같은 파일을 사용합니다. `main` 푸시로 자동 배포되는 GitHub Pages는
+별도이며, AWS에는 아래 명령으로 수동 배포합니다.
 
 AWS CLI에 계정 `399376050959` 접근 권한이 있는 프로필을 설정한 다음 실행합니다.
 
 ```bash
 pnpm install --frozen-lockfile
-AWS_PROFILE=<profile> pnpm deploy:aws:preview --dry-run     # 변경 내용 미리 확인
-AWS_PROFILE=<profile> pnpm deploy:aws:preview                 # 실제 배포
+AWS_PROFILE=<profile> pnpm deploy:aws:production --dry-run  # 변경 내용 미리 확인
+AWS_PROFILE=<profile> pnpm deploy:aws:production            # 운영 배포
 ```
 
-스크립트는 AWS 계정·S3 버킷·CloudFront 배포를 확인하고 `/` 기준으로 빌드한 뒤
+스크립트는 AWS 계정·S3 버킷·두 CloudFront 배포와 운영 별칭을 확인하고 `/` 기준으로 빌드한 뒤
 S3에 업로드합니다. HTML은 재검증 캐시로, 기타 자산은 5분 캐시로 올리고 CloudFront
-캐시 무효화가 끝나면 두 주소의 응답을 확인합니다. 기존 S3 객체를 삭제하지 않으며,
-정식 도메인 DNS는 변경하지 않습니다. 정식 `www` 도메인용 화면 분기와
-OG·canonical URL은 코드에 반영되어 있지만, CloudFront 호스트별 라우팅·인증서·DNS
-연결은 아직 필요합니다. 자세한 대상 값은
-`scripts/deploy-aws-preview.sh`에 고정되어 있습니다.
+두 배포의 캐시 무효화가 끝나면 정식 주소의 제목·canonical을 확인합니다. 기존 S3
+객체를 삭제하지 않으며 DNS는 변경하지 않습니다. 예전 `deploy:aws:preview` 명령은
+운영을 미리보기로 오인해 배포하지 않도록 차단했습니다.
+
+`brothermaze.com`은 기존 Cloudflare 규칙으로 `www` 주소에 이동합니다.
+`adhaeyo.com`(www 없음)도 2026-10-13에 AWS로 전환했으며 www 주소로 301 이동합니다.
+아임웹 사이트 자체는 삭제하지 않았고, 기존 사이트는 `adhaeyo.imweb.me`로 보존합니다.
+설정과 복구 값은 [AWS 도메인 문서](docs/AWS_DOMAINS.md)를 참조하세요.
 
 ## 구조
 
