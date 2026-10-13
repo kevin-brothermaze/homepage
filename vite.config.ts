@@ -127,7 +127,11 @@ function multiSiteHtml(): Plugin {
         if (!meta.path) continue
         const dir = path.join(outDir, meta.path)
         fs.mkdirSync(dir, { recursive: true })
-        fs.writeFileSync(path.join(dir, 'index.html'), rewrite(html, meta, urlBase))
+        let siteHtml = rewrite(html, meta, urlBase)
+        if (meta.id === 'adhaeyo') {
+          siteHtml = siteHtml.replace('</head>', `  <script defer src="${urlBase}adhaeyo-tracking.js"></script>\n</head>`)
+        }
+        fs.writeFileSync(path.join(dir, 'index.html'), siteHtml)
       }
     },
   }

@@ -90,6 +90,7 @@ done
 printf 'Building homepage for CloudFront root path...\n'
 # FIGMA_PUBLIC_URL may be set by Figma Make. Explicit --base keeps AWS assets at /assets/.
 pnpm exec vite build --base=/
+node --test scripts/test-tracking.mjs
 for file in index.html adhaeyo/index.html; do
   if [[ ! -s "${DIST_DIR}/${file}" ]]; then
     printf 'Build output is missing: %s\n' "$file" >&2
